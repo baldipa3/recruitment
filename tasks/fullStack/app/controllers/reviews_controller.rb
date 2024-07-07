@@ -17,13 +17,19 @@ class ReviewsController < ApplicationController
   end
 
   def create
-    # TODO: Create reviews in background. No need to show errors (if any) to users, it's fine to skip creating the review silently when some validations fail.
+    product = Product.find_by(id: review_params[:product_id])
 
-    tags = tags_with_default(params)
-    Review.create(product_id: params[:product_id], body: params[:body], rating: params[:rating], reviewer_name: params[:reviewer_name], tags: tags)
+    if product
+      tags = tags_with_default(product)
+      ReviewCreateJob.perform_later(review_params, tags)
+      flash[:notice] = 'Review is being created in background. It might take a moment to show up'
 
-    flash[:notice] = 'Review is being created in background. It might take a moment to show up'
-    redirect_to action: :index, shop_id: Product.find_by(id: params[:product_id]).shop_id
+      redirect_to reviews_path(shop_id: product.shop_id)
+    else
+      flash[:alert] = 'Product not found. Review creation failed.'
+
+      redirect_to reviews_path
+    end
   end
 
   private
@@ -35,10 +41,14 @@ class ReviewsController < ApplicationController
   #  - If the shop has some `tags`, those tags of the shop should be part of the review's `tags`
   #  - Else (if the shop doesn't have any `tags`), the default tags (in constant `DEFAULT_TAGS`) should be part of the review's `tags`
   # One may wonder what an odd logic and lenthy comment, thus may suspect something hidden here, an easter egg perhaps.
-  def tags_with_default(params)
-    product = Product.find_by(id: params[:product_id])
-    default_tags = product.shop.tags || DEFAULT_TAGS
-    default_tags.concat(params[:tags].split(',')).uniq
+  def tags_with_default(product)
+    shop_tags = product.shop.tags || DEFAULT_TAGS
+    review_tags = review_params[:tags]&.split(',') || []
+
+    (shop_tags + review_tags).uniq
   end
 
+  def review_params
+    params.require(:review).permit(:product_id, :body, :rating, :reviewer_name, :tags).to_h
+  end
 end
