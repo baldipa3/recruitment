@@ -1,0 +1,50 @@
+<div class="container mt-5">
+  <h2>Submit review form</h2>
+  <div class="card">
+    <div class="card-body">
+      <%= form_with(model: @review, local: true) do |form| %>
+        <%= form.hidden_field :product_id, value: @product.id %>
+        <div class="mb-3">
+          <label>Shop Name:</label>
+          <p><%= @product.shop.name %></p>
+        </div>
+
+        <div class="mb-3">
+          <label>Product Name:</label>
+          <p><%= @product.title %></p>
+        </div>
+
+        <div class="mb-3">
+          <label>Rating:</label>
+          <div class="star-rating">
+            <%= form.radio_button :rating, 5, id: "5-stars", class: "btn-check" %>
+            <label for="5-stars" class="btn btn-outline-warning">&#9733;</label>
+            <%= form.radio_button :rating, 4, id: "4-stars", class: "btn-check" %>
+            <label for="4-stars" class="btn btn-outline-warning">&#9733;</label>
+            <%= form.radio_button :rating, 3, id: "3-stars", class: "btn-check" %>
+            <label for="3-stars" class="btn btn-outline-warning">&#9733;</label>
+            <%= form.radio_button :rating, 2, id: "2-stars", class: "btn-check" %>
+            <label for="2-stars" class="btn btn-outline-warning">&#9733;</label>
+            <%= form.radio_button :rating, 1, id: "1-star", class: "btn-check" %>
+            <label for="1-star" class="btn btn-outline-warning">&#9733;</label>
+          </div>
+        </div>
+
+
+        <div class="mb-3">
+          <%= form.label :reviewer_name, "Name" %>
+          <%= form.text_field :reviewer_name, class: "form-control", placeholder: "Enter your name" %>
+        </div>
+
+        <div class="mb-3">
+          <%= form.label :body, "Review" %>
+          <%= form.text_area :body, class: "form-control", placeholder: "Write your reviews here" %>
+        </div>
+
+        <div class="mb-3">
+          <%= form.submit "Submit Review", class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
