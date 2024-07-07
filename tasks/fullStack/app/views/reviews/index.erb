@@ -1,0 +1,24 @@
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <div class="container-fluid justify-content-end">
+    <div class="navbar-nav ml-auto">
+      <%= form_tag(reviews_path, method: :get, id: 'shop_form', class: 'form-inline') do %>
+        <div class="row">
+          <div class="col-auto">
+            <span class="navbar-text">Filter By Shop</span>
+          </div>
+          <div class="col">
+            <div class="dropdown">
+              <%= select_tag 'shop_id', options_for_select([], params[:shop_id]), prompt: 'Select a shop', onchange: 'this.form.submit()', class: 'form-control form-control-sm custom-dropdown dropdown-toggle' %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid" id="products-list">
+  <%= render partial: 'reviews/product', collection: @products, as: :product %>
+</div>
+
+<%= paginate @products %>

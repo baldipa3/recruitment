@@ -66,4 +66,25 @@ RSpec.describe ReviewsController, type: :request do
       end
     end
   end
+
+  describe "#index" do
+    let(:product) { FactoryBot.create(:product) }
+
+    it 'renders the index template' do
+      get "/reviews", params: { shop_id: product.shop_id }
+
+      expect(response.status).to eq(200)
+    end
+  end
+
+  describe "#fetch_reviews" do
+    let(:product) { FactoryBot.create(:product) }
+    let(:reviews) { create_list(:review, 10, product: product) }
+
+    it 'renders the index template' do
+      get "/reviews/fetch_reviews", params: { product_id: product.id }, xhr: true
+
+      expect(response.status).to eq(200)
+    end
+  end
 end

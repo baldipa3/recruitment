@@ -1,18 +1,19 @@
 class ReviewsController < ApplicationController
+  protect_from_forgery except: :fetch_reviews
+
 
   DEFAULT_TAGS = ['default']
 
   def index
-    if params[:shop_id].present? && Shop.where("id = #{params[:shop_id]}").present?
-      params[:per_page] ||= 10
-      offset = params[:page].to_i * params[:per_page]
+    @products = Product.where(shop_id: params[:shop_id]).page params[:page]
+  end
 
-      @data = []
-      products = Product.where("shop_id = #{params[:shop_id]}").sort_by(&:created_at)[offset..(offset + params[:per_page])]
-      products.each do |product|
-        reviews = product.reviews.sort_by(&:created_at)[offset..(offset + params[:per_page])]
-        @data << { product: product, reviews: reviews }
-      end
+  def fetch_reviews
+    product = Product.includes(:reviews).find(params[:product_id])
+    @reviews = product.reviews.order(created_at: :desc).page params[:page]
+
+    respond_to do |format|
+      format.js
     end
   end
 
@@ -39,13 +40,6 @@ class ReviewsController < ApplicationController
 
   private
 
-  # Prepend `params[:tags]` with tags of the shop (if present) or DEFAULT_TAGS
-  # For simplicity, let's skip the frontend for `tags`, and just assume frontend can somehow magically send to backend `params[:tags]` as a comma-separated string
-  # The logic/requirement of tags is that:
-  #  - A review can have `tags` (for simplicity, tags are just an array of strings)
-  #  - If the shop has some `tags`, those tags of the shop should be part of the review's `tags`
-  #  - Else (if the shop doesn't have any `tags`), the default tags (in constant `DEFAULT_TAGS`) should be part of the review's `tags`
-  # One may wonder what an odd logic and lenthy comment, thus may suspect something hidden here, an easter egg perhaps.
   def tags_with_default(product)
     shop_tags = product.shop.tags || DEFAULT_TAGS
     review_tags = review_params[:tags]&.split(',') || []
