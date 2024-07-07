@@ -21,7 +21,6 @@ RSpec.describe ReviewsController, type: :request do
       expect { post '/reviews', params: params }.to have_enqueued_job(ReviewCreateJob)
     end
 
-
     context "review creation with and without tags" do
       before { allow(ReviewCreateJob).to receive(:perform_later) }
 
@@ -70,7 +69,7 @@ RSpec.describe ReviewsController, type: :request do
   describe "#index" do
     let(:product) { FactoryBot.create(:product) }
 
-    it 'renders the index template' do
+    it 'returns 200 Ok' do
       get "/reviews", params: { shop_id: product.shop_id }
 
       expect(response.status).to eq(200)
@@ -81,8 +80,24 @@ RSpec.describe ReviewsController, type: :request do
     let(:product) { FactoryBot.create(:product) }
     let(:reviews) { create_list(:review, 10, product: product) }
 
-    it 'renders the index template' do
+    it 'returns 200 Ok' do
       get "/reviews/fetch_reviews", params: { product_id: product.id }, xhr: true
+
+      expect(response.status).to eq(200)
+    end
+  end
+
+  describe "#average_ratings" do
+    let(:ratings) { { "month1" => 3.5, "month2" => 4.0, "month3" => 4.5 } }
+    let(:rating_analyzer) { instance_double(RatingAnalyzer) }
+
+    before do 
+      allow(RatingAnalyzer).to receive(:new).and_return(rating_analyzer)
+      allow(rating_analyzer).to receive(:last_three_months_average_ratings).and_return(ratings)
+    end
+    
+    it 'returns 200 Ok the index template' do
+      get "/reviews/average_ratings"
 
       expect(response.status).to eq(200)
     end

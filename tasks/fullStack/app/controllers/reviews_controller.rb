@@ -38,6 +38,10 @@ class ReviewsController < ApplicationController
     end
   end
 
+  def average_ratings
+    @ratings = RatingAnalyzer.new(Date.today).last_three_months_average_ratings
+  end
+
   private
 
   def tags_with_default(product)

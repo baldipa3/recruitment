@@ -5,6 +5,7 @@ Rails.application.routes.draw do
 
   resources :reviews, only: [:index, :create, :new] do
     get 'fetch_reviews', on: :collection
+    get 'average_ratings', on: :collection
   end
 
   resources :shops, only: [:index]
