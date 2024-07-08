@@ -40,5 +40,4 @@ ActiveRecord::Schema.define(version: 2021_03_19_042311) do
     t.datetime "updated_at", precision: 6, null: false
     t.string "tags", array: true
   end
-
 end

@@ -1,0 +1,15 @@
+<div class="card mb-3 w-100">
+  <div class="row g-0">
+    <div class="col-md-2 d-flex flex-column align-items-center justify-content-center">
+      <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; font-size: 28px; font-weight: bold;">
+        <%= product.title[0].upcase %>
+      </div>
+      <p class="card-title mt-2 text-center"><%= product.title %></p>
+    </div>
+    <div class="col-md-10">
+      <%= link_to 'Add Review', new_review_path(product_id: product.id), class: 'btn btn-primary' %>
+      <div id="product-review" class="product-reviews-container" data-product-id="<%= product.id %>">
+      </div>
+    </div>
+  </div>
+</div>

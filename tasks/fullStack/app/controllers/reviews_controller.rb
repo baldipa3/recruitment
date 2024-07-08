@@ -1,44 +1,60 @@
 class ReviewsController < ApplicationController
+  protect_from_forgery except: :fetch_reviews
+
 
   DEFAULT_TAGS = ['default']
 
   def index
-    if params[:shop_id].present? && Shop.where("id = #{params[:shop_id]}").present?
-      params[:per_page] ||= 10
-      offset = params[:page].to_i * params[:per_page]
+    @products = Product.where(shop_id: params[:shop_id]).page params[:page]
+  end
 
-      @data = []
-      products = Product.where("shop_id = #{params[:shop_id]}").sort_by(&:created_at)[offset..(offset + params[:per_page])]
-      products.each do |product|
-        reviews = product.reviews.sort_by(&:created_at)[offset..(offset + params[:per_page])]
-        @data << { product: product, reviews: reviews }
-      end
+  def fetch_reviews
+    product = Product.includes(:reviews).find(params[:product_id])
+    @reviews = product.reviews.order(created_at: :desc).page params[:page]
+
+    respond_to do |format|
+      format.js
     end
   end
 
+  def new
+    @product = Product.find_by(id: params[:product_id])
+
+    redirect_to reviews_path unless @product
+
+    @review = Review.new
+  end
+
   def create
-    # TODO: Create reviews in background. No need to show errors (if any) to users, it's fine to skip creating the review silently when some validations fail.
+    product = Product.find_by(id: review_params[:product_id])
 
-    tags = tags_with_default(params)
-    Review.create(product_id: params[:product_id], body: params[:body], rating: params[:rating], reviewer_name: params[:reviewer_name], tags: tags)
+    if product
+      tags = tags_with_default(product)
+      ReviewCreateJob.perform_later(review_params, tags)
+      flash[:notice] = 'Review is being created in background. It might take a moment to show up'
 
-    flash[:notice] = 'Review is being created in background. It might take a moment to show up'
-    redirect_to action: :index, shop_id: Product.find_by(id: params[:product_id]).shop_id
+      redirect_to reviews_path(shop_id: product.shop_id)
+    else
+      flash[:alert] = 'Product not found. Review creation failed.'
+
+      redirect_to reviews_path
+    end
+  end
+
+  def average_ratings
+    @ratings = RatingAnalyzer.new(Date.today).last_three_months_average_ratings
   end
 
   private
 
-  # Prepend `params[:tags]` with tags of the shop (if present) or DEFAULT_TAGS
-  # For simplicity, let's skip the frontend for `tags`, and just assume frontend can somehow magically send to backend `params[:tags]` as a comma-separated string
-  # The logic/requirement of tags is that:
-  #  - A review can have `tags` (for simplicity, tags are just an array of strings)
-  #  - If the shop has some `tags`, those tags of the shop should be part of the review's `tags`
-  #  - Else (if the shop doesn't have any `tags`), the default tags (in constant `DEFAULT_TAGS`) should be part of the review's `tags`
-  # One may wonder what an odd logic and lenthy comment, thus may suspect something hidden here, an easter egg perhaps.
-  def tags_with_default(params)
-    product = Product.find_by(id: params[:product_id])
-    default_tags = product.shop.tags || DEFAULT_TAGS
-    default_tags.concat(params[:tags].split(',')).uniq
+  def tags_with_default(product)
+    shop_tags = product.shop.tags || DEFAULT_TAGS
+    review_tags = review_params[:tags]&.split(',') || []
+
+    (shop_tags + review_tags).uniq
   end
 
+  def review_params
+    params.require(:review).permit(:product_id, :body, :rating, :reviewer_name, :tags).to_h
+  end
 end
