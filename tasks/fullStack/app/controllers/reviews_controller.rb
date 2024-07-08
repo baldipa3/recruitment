@@ -19,6 +19,9 @@ class ReviewsController < ApplicationController
 
   def new
     @product = Product.find_by(id: params[:product_id])
+
+    redirect_to reviews_path unless @product
+
     @review = Review.new
   end
 
